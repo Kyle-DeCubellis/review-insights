@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import type { DashboardResponse } from "@/app/api/dashboard/[storeId]/route";
 import SentimentChart from "@/components/SentimentChart";
 import ThemesList from "@/components/ThemesList";
@@ -27,10 +28,23 @@ export default async function DashboardPage({ params }: PageProps) {
 
   if (!data) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <h2 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.5rem" }}>Store not found</h2>
-          <p style={{ color: "#64748b" }}>Check the store ID and try again.</p>
+      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", padding: "2rem" }}>
+          <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔍</div>
+          <h2 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.5rem", color: "#0f172a" }}>Store not found</h2>
+          <p style={{ color: "#64748b", marginBottom: "1.5rem" }}>
+            No store with ID <code style={{ background: "#f1f5f9", padding: "1px 6px", borderRadius: 4, fontSize: "0.9em" }}>{params.storeId}</code> exists.
+          </p>
+          <a
+            href="/"
+            style={{
+              display: "inline-block", padding: "0.625rem 1.375rem",
+              background: "#2563eb", color: "#fff", borderRadius: 8,
+              fontWeight: 600, fontSize: "0.9375rem", textDecoration: "none",
+            }}
+          >
+            ← Back to home
+          </a>
         </div>
       </div>
     );
@@ -49,8 +63,10 @@ export default async function DashboardPage({ params }: PageProps) {
       <header style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "1rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h1 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Review Insights</h1>
-            <p style={{ fontSize: "0.875rem", color: "#64748b" }}>{data.shopifyStoreId}</p>
+            <Link href="/" style={{ fontSize: "0.8125rem", color: "#94a3b8", textDecoration: "none", display: "block", marginBottom: "0.125rem" }}>
+              ← Review Insights
+            </Link>
+            <h1 style={{ fontSize: "1.125rem", fontWeight: 700 }}>{data.shopifyStoreId}</h1>
           </div>
           <div style={{ textAlign: "right", fontSize: "0.75rem", color: "#94a3b8" }}>
             <div>Last updated: {toDate}</div>
