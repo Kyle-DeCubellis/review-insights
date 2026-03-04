@@ -348,8 +348,7 @@ function AnalyzeContent() {
               {(step as { message: string }).message}
             </div>
             <div style={{ marginTop: "1rem", fontSize: "0.875rem", color: "#64748b" }}>
-              Try a store like <code style={{ background: "#f1f5f9", padding: "0 4px", borderRadius: 4 }}>allbirds.myshopify.com</code> or{" "}
-              <code style={{ background: "#f1f5f9", padding: "0 4px", borderRadius: 4 }}>gymshark.myshopify.com</code>
+              Works with any Shopify store that has Judge.me installed and public widgets enabled on its product pages.
             </div>
           </div>
         )}

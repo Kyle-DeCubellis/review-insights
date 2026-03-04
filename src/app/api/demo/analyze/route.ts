@@ -15,25 +15,25 @@ function normalizeDomain(input: string): string {
   return d;
 }
 
-/** Try to pull the Judge.me public api_token out of the store's HTML. */
-async function extractPublicToken(shopDomain: string): Promise<string | null> {
+const JUDGEME_TOKEN_PATTERNS = [
+  /api_token["']?\s*[:=]\s*["']([a-zA-Z0-9_\-]{10,})["']/,
+  /jdgm[._]?api[._]?token["']?\s*[:=]\s*["']([a-zA-Z0-9_\-]{10,})["']/i,
+  /"shopToken"\s*:\s*"([a-zA-Z0-9_\-]{10,})"/,
+  /JudgeMeWidget\.init\([^)]*api_token\s*:\s*["']([a-zA-Z0-9_\-]{10,})["']/,
+  /jdgm-all-reviews[^>]*data-api-token=["']([a-zA-Z0-9_\-]{10,})["']/,
+  /data-api-token=["']([a-zA-Z0-9_\-]{10,})["']/,
+  /"public_token"\s*:\s*"([a-zA-Z0-9_\-]{10,})"/,
+];
+
+async function scrapeTokenFromUrl(url: string): Promise<string | null> {
   try {
-    const res = await fetch(`https://${shopDomain}`, {
+    const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; ReviewInsightsBot/1.0)" },
       signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) return null;
     const html = await res.text();
-
-    const patterns = [
-      /api_token["']?\s*[:=]\s*["']([a-zA-Z0-9_\-]{10,})["']/,
-      /jdgm[._]?api[._]?token["']?\s*[:=]\s*["']([a-zA-Z0-9_\-]{10,})["']/i,
-      /"shopToken"\s*:\s*"([a-zA-Z0-9_\-]{10,})"/,
-      /JudgeMeWidget\.init\([^)]*api_token\s*:\s*["']([a-zA-Z0-9_\-]{10,})["']/,
-      /jdgm-all-reviews[^>]*data-api-token=["']([a-zA-Z0-9_\-]{10,})["']/,
-    ];
-
-    for (const p of patterns) {
+    for (const p of JUDGEME_TOKEN_PATTERNS) {
       const m = html.match(p);
       if (m) return m[1];
     }
@@ -41,6 +41,35 @@ async function extractPublicToken(shopDomain: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/** Try to pull the Judge.me public api_token out of the store's HTML.
+ *  Checks the homepage first, then falls back to a product page where
+ *  the Judge.me review widget (and its token) are far more likely to appear. */
+async function extractPublicToken(shopDomain: string): Promise<string | null> {
+  // 1. Try homepage
+  const homeToken = await scrapeTokenFromUrl(`https://${shopDomain}`);
+  if (homeToken) return homeToken;
+
+  // 2. Discover a product handle via the public products JSON endpoint
+  try {
+    const productsRes = await fetch(`https://${shopDomain}/products.json?limit=1`, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ReviewInsightsBot/1.0)" },
+      signal: AbortSignal.timeout(6_000),
+    });
+    if (productsRes.ok) {
+      const json = await productsRes.json() as { products?: { handle: string }[] };
+      const handle = json.products?.[0]?.handle;
+      if (handle) {
+        const productToken = await scrapeTokenFromUrl(`https://${shopDomain}/products/${handle}`);
+        if (productToken) return productToken;
+      }
+    }
+  } catch {
+    // ignore — fallthrough returns null
+  }
+
+  return null;
 }
 
 interface JudgeMeReview {
