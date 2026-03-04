@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/fetch-reviews",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/classify-reviews",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/send-digests",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}
