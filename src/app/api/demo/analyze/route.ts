@@ -116,6 +116,19 @@ function formatTheme(theme: string): string {
   return theme.replace(/^[CP]_/, "").replace(/_/g, " ");
 }
 
+function inferThemeFromText(text: string): Theme {
+  const t = text.toLowerCase();
+  if (/\b(ship|deliver|arriv|transit|packag)\b/.test(t)) return "C_shipping";
+  if (/\b(support|service|customer|refund|replac|return|warranty)\b/.test(t)) return "C_customer_service";
+  if (/\b(broke|crack|snap|broke|rattle|loose|fall apart|durabilit|last)\b/.test(t)) return "C_durability";
+  if (/\b(size|sizing|fit|tight|small|large|big)\b/.test(t)) return "P_sizing";
+  if (/\b(comfort|ergonomic|feel|soft|grip)\b/.test(t)) return "C_fit_comfort";
+  if (/\b(design|look|color|style|aesthetic|appearance)\b/.test(t)) return "C_design";
+  if (/\b(price|value|worth|expensive|cheap|cost)\b/.test(t)) return "C_value";
+  if (/\b(perform|work|function|speed|charge|power|fast)\b/.test(t)) return "C_performance";
+  return "C_quality";
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const brandId = searchParams.get("brand") ?? "owala";
@@ -151,7 +164,13 @@ export async function GET(request: Request) {
                 return { review, result };
               } catch (err) {
                 console.error(`Failed to classify review ${review.id}:`, err);
-                const fallback: ClassificationResult = { theme: "C_quality", sentiment: 0, confidence: 0.3 };
+                // Infer sentiment from star rating and theme from keywords so the demo
+                // remains meaningful even when the Claude API is unavailable.
+                const fallback: ClassificationResult = {
+                  theme: inferThemeFromText(review.text),
+                  sentiment: review.rating <= 2 ? -1 : review.rating >= 4 ? 1 : 0,
+                  confidence: 0.3,
+                };
                 return { review, result: fallback };
               }
             })
