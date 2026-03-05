@@ -21,11 +21,22 @@ function createClient() {
   });
 }
 
-const client = globalThis._pgClient ?? createClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalThis._pgClient = client;
+function getDb() {
+  const client = globalThis._pgClient ?? createClient();
+  if (process.env.NODE_ENV !== "production") {
+    globalThis._pgClient = client;
+  }
+  return drizzle(client, { schema });
 }
 
-export const db = drizzle(client, { schema });
-export type DB = typeof db;
+// Lazy proxy: only connects to DB when a property is actually accessed.
+// This prevents build failures when DATABASE_URL isn't set (e.g., demo route
+// transitively imports this file but never queries the DB).
+export const db = new Proxy({} as ReturnType<typeof getDb>, {
+  get(_target, prop, receiver) {
+    const real = getDb();
+    return Reflect.get(real, prop, receiver);
+  },
+});
+
+export type DB = ReturnType<typeof getDb>;

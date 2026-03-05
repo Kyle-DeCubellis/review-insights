@@ -1,0 +1,299 @@
+"use client";
+
+import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
+import SentimentChart from "@/components/SentimentChart";
+import ThemesList from "@/components/ThemesList";
+import WeekOverWeek from "@/components/WeekOverWeek";
+import ReviewsList from "@/components/ReviewsList";
+import SlackDigestPreview from "@/components/SlackDigestPreview";
+
+interface Insight {
+  type: "warning" | "success" | "info";
+  title: string;
+  detail: string;
+}
+
+interface DashboardData {
+  storeName: string;
+  sentiment: { positive: number; negative: number; neutral: number; total: number };
+  topThemes: { theme: string; count: number; avgSentiment: number }[];
+  weekOverWeek: {
+    currentWeek: { positive: number; negative: number; neutral: number; total: number };
+    previousWeek: { positive: number; negative: number; neutral: number; total: number };
+    positiveChange: number | null;
+    negativeChange: number | null;
+  };
+  reviews: { id: number; text: string; rating: number; theme: string | null; sentiment: number | null; confidence: number | null; createdAt: string }[];
+  insights: Insight[];
+}
+
+type Step = "idle" | "checking" | "found" | "classifying" | "done" | "error";
+
+function Spinner() {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        width: 16,
+        height: 16,
+        border: "2px solid #e2e8f0",
+        borderTopColor: "#2563eb",
+        borderRadius: "50%",
+        animation: "spin 0.6s linear infinite",
+      }}
+    />
+  );
+}
+
+function StepIndicator({ step, current, label, detail }: { step: Step; current: Step; label: string; detail?: string }) {
+  const stepOrder: Step[] = ["checking", "found", "classifying", "done"];
+  const currentIdx = stepOrder.indexOf(current);
+  const stepIdx = stepOrder.indexOf(step);
+  const isActive = step === current && current !== "done";
+  const isDone = currentIdx > stepIdx || current === "done";
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
+      <div style={{
+        width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+        background: isDone ? "#22c55e" : isActive ? "#2563eb" : "#e2e8f0",
+        color: isDone || isActive ? "#fff" : "#94a3b8", fontSize: 12, fontWeight: 700,
+      }}>
+        {isDone ? "\u2713" : isActive ? <Spinner /> : "\u00b7"}
+      </div>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: isActive ? 600 : 400, color: isDone ? "#16a34a" : isActive ? "#1e293b" : "#94a3b8" }}>
+          {label}
+        </div>
+        {detail && isActive && (
+          <div style={{ fontSize: 12, color: "#64748b" }}>{detail}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InsightCard({ insight }: { insight: Insight }) {
+  const styles: Record<string, { bg: string; border: string; icon: string; titleColor: string }> = {
+    warning: { bg: "#fffbeb", border: "#fde68a", icon: "\u26a0\ufe0f", titleColor: "#92400e" },
+    success: { bg: "#f0fdf4", border: "#bbf7d0", icon: "\u2705", titleColor: "#166534" },
+    info: { bg: "#eff6ff", border: "#bfdbfe", icon: "\u2139\ufe0f", titleColor: "#1e40af" },
+  };
+  const s = styles[insight.type] || styles.info;
+
+  return (
+    <div style={{ padding: "12px 16px", background: s.bg, border: `1px solid ${s.border}`, borderRadius: 8 }}>
+      <div style={{ fontWeight: 600, fontSize: 14, color: s.titleColor, marginBottom: 4 }}>
+        {s.icon} {insight.title}
+      </div>
+      <div style={{ fontSize: 13, color: "#475569" }}>{insight.detail}</div>
+    </div>
+  );
+}
+
+export default function DemoDashboardPage() {
+  const [step, setStep] = useState<Step>("idle");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [classifyProgress, setClassifyProgress] = useState({ classified: 0, total: 0 });
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+
+    const es = new EventSource("/api/demo/analyze");
+
+    es.addEventListener("status", (e) => {
+      const payload = JSON.parse(e.data);
+      setStep(payload.step);
+      setStatusMessage(payload.message || "");
+      if (payload.step === "classifying") {
+        setClassifyProgress({ classified: payload.classified, total: payload.total });
+      }
+    });
+
+    es.addEventListener("done", (e) => {
+      const payload = JSON.parse(e.data);
+      setData(payload);
+      setStep("done");
+      es.close();
+    });
+
+    es.addEventListener("error", (e) => {
+      try {
+        const payload = JSON.parse((e as MessageEvent).data);
+        setError(payload.message);
+      } catch {
+        setError("Connection lost");
+      }
+      setStep("error");
+      es.close();
+    });
+
+    es.onerror = () => {
+      if (step !== "done") {
+        setError("Connection lost — please refresh to retry.");
+        setStep("error");
+      }
+      es.close();
+    };
+
+    return () => es.close();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <main className="container" style={{ padding: "2rem 1.5rem", maxWidth: 1100 }}>
+      {/* Spinner animation */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* Header */}
+      <div style={{ marginBottom: "2rem" }}>
+        <Link href="/" style={{ fontSize: 13, color: "#64748b", display: "inline-block", marginBottom: 8 }}>
+          &larr; Back to home
+        </Link>
+        <h1 style={{ fontSize: "1.75rem", fontWeight: 700 }}>
+          Demo Dashboard
+        </h1>
+        <p style={{ color: "#64748b", fontSize: 14 }}>
+          Summit Gear Co. &mdash; 20 reviews classified live with Claude AI
+        </p>
+      </div>
+
+      {/* Progress section */}
+      {step !== "done" && (
+        <div className="card" style={{ marginBottom: "2rem" }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Analyzing Reviews</h2>
+          <StepIndicator step="checking" current={step} label="Connecting to store" />
+          <StepIndicator step="found" current={step} label="Loading reviews" detail={statusMessage} />
+          <StepIndicator
+            step="classifying"
+            current={step}
+            label="Classifying with Claude AI"
+            detail={classifyProgress.total > 0 ? `${classifyProgress.classified} of ${classifyProgress.total} reviews` : undefined}
+          />
+          <StepIndicator step="done" current={step} label="Building dashboard" />
+
+          {/* Progress bar */}
+          {step === "classifying" && classifyProgress.total > 0 && (
+            <div style={{ marginTop: 12, height: 6, background: "#f1f5f9", borderRadius: 3 }}>
+              <div
+                style={{
+                  height: "100%",
+                  width: `${(classifyProgress.classified / classifyProgress.total) * 100}%`,
+                  background: "#2563eb",
+                  borderRadius: 3,
+                  transition: "width 0.3s ease",
+                }}
+              />
+            </div>
+          )}
+
+          {error && (
+            <div style={{ marginTop: 12, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, color: "#991b1b", fontSize: 13 }}>
+              {error}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dashboard */}
+      {data && (
+        <>
+          {/* Stat cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+            <div className="card" style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", fontWeight: 600, letterSpacing: 0.5 }}>Total Reviews</div>
+              <div style={{ fontSize: "2rem", fontWeight: 700 }}>{data.sentiment.total}</div>
+            </div>
+            <div className="card" style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", fontWeight: 600, letterSpacing: 0.5 }}>Positive</div>
+              <div style={{ fontSize: "2rem", fontWeight: 700, color: "#22c55e" }}>
+                {data.sentiment.total > 0 ? Math.round((data.sentiment.positive / data.sentiment.total) * 100) : 0}%
+              </div>
+            </div>
+            <div className="card" style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", fontWeight: 600, letterSpacing: 0.5 }}>Negative</div>
+              <div style={{ fontSize: "2rem", fontWeight: 700, color: "#ef4444" }}>
+                {data.sentiment.total > 0 ? Math.round((data.sentiment.negative / data.sentiment.total) * 100) : 0}%
+              </div>
+            </div>
+          </div>
+
+          {/* Charts row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+            <div className="card">
+              <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Sentiment Breakdown</h2>
+              <SentimentChart positive={data.sentiment.positive} negative={data.sentiment.negative} neutral={data.sentiment.neutral} />
+            </div>
+            <div className="card">
+              <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Top Themes</h2>
+              <ThemesList themes={data.topThemes} limit={6} />
+            </div>
+          </div>
+
+          {/* Week over week */}
+          <div className="card" style={{ marginBottom: "1.5rem" }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Week over Week</h2>
+            <WeekOverWeek data={data.weekOverWeek} />
+          </div>
+
+          {/* Actionable Insights */}
+          {data.insights.length > 0 && (
+            <div className="card" style={{ marginBottom: "1.5rem" }}>
+              <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Actionable Insights</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {data.insights.map((insight, i) => (
+                  <InsightCard key={i} insight={insight} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Slack Digest Preview */}
+          <div className="card" style={{ marginBottom: "1.5rem" }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Slack Digest Preview</h2>
+            <p style={{ fontSize: 13, color: "#64748b", marginBottom: 12 }}>
+              This is what your team would see in Slack every morning.
+            </p>
+            <SlackDigestPreview
+              storeName={data.storeName}
+              sentiment={data.sentiment}
+              topThemes={data.topThemes}
+            />
+          </div>
+
+          {/* Reviews table */}
+          <div className="card" style={{ marginBottom: "1.5rem" }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>All Reviews</h2>
+            <ReviewsList reviews={data.reviews} />
+          </div>
+
+          {/* CTA */}
+          <div className="card" style={{ textAlign: "center", padding: "2rem" }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Like what you see?</h2>
+            <p style={{ color: "#64748b", marginBottom: 16, fontSize: 14 }}>
+              Connect your Shopify store to get real-time insights from your own reviews.
+            </p>
+            <a
+              href="/api/oauth/authorize?shop=your-store.myshopify.com"
+              style={{
+                display: "inline-block",
+                padding: "12px 28px",
+                background: "#2563eb",
+                color: "#fff",
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 15,
+              }}
+            >
+              Connect Your Store
+            </a>
+          </div>
+        </>
+      )}
+    </main>
+  );
+}
