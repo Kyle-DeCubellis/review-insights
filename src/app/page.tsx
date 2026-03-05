@@ -6,7 +6,7 @@ export default function HomePage() {
       <div style={{ maxWidth: 560, textAlign: "center" }}>
         <div style={{ fontSize: "2.75rem", marginBottom: "0.5rem" }}>📊</div>
         <h1 style={{ fontSize: "2.5rem", fontWeight: 700, marginBottom: "0.75rem", lineHeight: 1.2 }}>
-          Review Insights
+          Insight.me
         </h1>
         <p style={{ color: "#64748b", marginBottom: "2rem", fontSize: "1.125rem", lineHeight: 1.6 }}>
           AI-powered classification for your Shopify reviews. Understand sentiment, themes, and trends — then act on them.

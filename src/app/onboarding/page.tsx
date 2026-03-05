@@ -66,7 +66,7 @@ function OnboardingForm() {
         Almost there!
       </h1>
       <p style={{ color: "#64748b", marginBottom: "2rem" }}>
-        Configure Review Insights for your store.
+        Configure Insight.me for your store.
       </p>
 
       <div style={{ marginBottom: "1.5rem" }}>

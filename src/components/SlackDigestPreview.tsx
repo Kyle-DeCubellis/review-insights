@@ -37,7 +37,7 @@ export default function SlackDigestPreview({ storeName, sentiment, topThemes }: 
           {[
             { name: "general", active: false },
             { name: "product-updates", active: false },
-            { name: "product-review-insights", active: true },
+            { name: "insight-me-digests", active: true },
             { name: "support-alerts", active: false },
           ].map((ch) => (
             <div
@@ -64,7 +64,7 @@ export default function SlackDigestPreview({ storeName, sentiment, topThemes }: 
         {/* Channel header */}
         <div style={{ padding: "8px 16px", borderBottom: "1px solid #e2e2e2", fontWeight: 700, fontSize: 14 }}>
           <span style={{ color: "#6b6d70", marginRight: 4 }}>#</span>
-          product-review-insights
+          insight-me-digests
         </div>
 
         {/* Message */}
@@ -75,11 +75,11 @@ export default function SlackDigestPreview({ storeName, sentiment, topThemes }: 
               width: 36, height: 36, borderRadius: 4, background: "linear-gradient(135deg, #2563eb, #7c3aed)",
               display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16, fontWeight: 700, flexShrink: 0,
             }}>
-              RI
+              IM
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ marginBottom: 4 }}>
-                <span style={{ fontWeight: 700, fontSize: 14 }}>Review Insights</span>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>Insight.me</span>
                 <span style={{ fontSize: 11, color: "#616061", marginLeft: 6, background: "#f0f0f0", padding: "1px 4px", borderRadius: 3, fontWeight: 500 }}>APP</span>
                 <span style={{ fontSize: 11, color: "#616061", marginLeft: 8 }}>{timeStr}</span>
               </div>

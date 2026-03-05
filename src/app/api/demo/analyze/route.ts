@@ -1,4 +1,4 @@
-import { DEMO_REVIEWS, DEMO_PREVIOUS_WEEK } from "@/data/demo-reviews";
+import { DEMO_BRANDS, getBrandById, DEMO_BRANDS as brands } from "@/data/demo-brands";
 import { classifyReview, type ClassificationResult, type Theme } from "@/lib/classifier";
 
 export const runtime = "nodejs";
@@ -26,7 +26,7 @@ function sendSSE(controller: ReadableStreamDefaultController, event: string, dat
   controller.enqueue(new TextEncoder().encode(payload));
 }
 
-function buildInsights(classified: ClassifiedReview[]): Insight[] {
+function buildInsights(classified: ClassifiedReview[], previousWeek: { positive: number; negative: number; neutral: number; total: number }): Insight[] {
   const insights: Insight[] = [];
   const negative = classified.filter((r) => r.sentiment === -1);
   const positive = classified.filter((r) => r.sentiment === 1);
@@ -57,7 +57,7 @@ function buildInsights(classified: ClassifiedReview[]): Insight[] {
   const currentPositive = positive.length;
   const currentTotal = classified.length;
   const currentPct = Math.round((currentPositive / currentTotal) * 100);
-  const prevPct = Math.round((DEMO_PREVIOUS_WEEK.positive / DEMO_PREVIOUS_WEEK.total) * 100);
+  const prevPct = Math.round((previousWeek.positive / previousWeek.total) * 100);
   const delta = currentPct - prevPct;
   if (Math.abs(delta) >= 5) {
     insights.push({
@@ -116,19 +116,23 @@ function formatTheme(theme: string): string {
   return theme.replace(/^[CP]_/, "").replace(/_/g, " ");
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const brandId = searchParams.get("brand") ?? "owala";
+  const brand = getBrandById(brandId) ?? DEMO_BRANDS[0];
+
   const stream = new ReadableStream({
     async start(controller) {
       try {
         // Step 1: "checking" — brief delay for UX
-        sendSSE(controller, "status", { step: "checking", message: "Connecting to Summit Gear Co...." });
+        sendSSE(controller, "status", { step: "checking", message: `Connecting to ${brand.name}...` });
         await new Promise((r) => setTimeout(r, 400));
 
         // Step 2: "found" reviews
-        const reviews = DEMO_REVIEWS;
+        const reviews = brand.reviews;
         sendSSE(controller, "status", {
           step: "found",
-          message: `Found ${reviews.length} reviews`,
+          message: `Found ${reviews.length} reviews for ${brand.product}`,
           reviewCount: reviews.length,
         });
         await new Promise((r) => setTimeout(r, 300));
@@ -143,7 +147,7 @@ export async function GET() {
           const results = await Promise.all(
             batch.map(async (review) => {
               try {
-                const result = await classifyReview(review.text, "outdoor_gear");
+                const result = await classifyReview(review.text, brand.category);
                 return { review, result };
               } catch (err) {
                 console.error(`Failed to classify review ${review.id}:`, err);
@@ -197,7 +201,7 @@ export async function GET() {
           }))
           .sort((a, b) => b.count - a.count);
 
-        // Current week sentiment (reviews from last 7 days = ids 1-12)
+        // Current week sentiment (reviews from last 7 days)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const currentWeekReviews = classified.filter((r) => new Date(r.createdAt) >= sevenDaysAgo);
@@ -208,22 +212,22 @@ export async function GET() {
           total: currentWeekReviews.length,
         };
 
-        const prevTotal = DEMO_PREVIOUS_WEEK.total;
+        const prevTotal = brand.previousWeek.total;
         const weekOverWeek = {
           currentWeek,
-          previousWeek: DEMO_PREVIOUS_WEEK,
+          previousWeek: brand.previousWeek,
           positiveChange: prevTotal > 0
-            ? Math.round(((currentWeek.positive / currentWeek.total) * 100) - ((DEMO_PREVIOUS_WEEK.positive / prevTotal) * 100))
+            ? Math.round(((currentWeek.positive / currentWeek.total) * 100) - ((brand.previousWeek.positive / prevTotal) * 100))
             : null,
           negativeChange: prevTotal > 0
-            ? Math.round(((currentWeek.negative / currentWeek.total) * 100) - ((DEMO_PREVIOUS_WEEK.negative / prevTotal) * 100))
+            ? Math.round(((currentWeek.negative / currentWeek.total) * 100) - ((brand.previousWeek.negative / prevTotal) * 100))
             : null,
         };
 
         // Insights
-        const insights = buildInsights(classified);
+        const insights = buildInsights(classified, brand.previousWeek);
 
-        // Reviews for table (formatted for ReviewsList component)
+        // Reviews for table
         const reviewsForTable = classified.map((r) => ({
           id: r.id,
           text: r.text,
@@ -235,7 +239,9 @@ export async function GET() {
         }));
 
         sendSSE(controller, "done", {
-          storeName: "Summit Gear Co.",
+          storeName: brand.name,
+          productName: brand.product,
+          brandEmoji: brand.emoji,
           sentiment,
           topThemes,
           weekOverWeek,

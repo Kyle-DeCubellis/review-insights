@@ -7,6 +7,7 @@ import ThemesList from "@/components/ThemesList";
 import WeekOverWeek from "@/components/WeekOverWeek";
 import ReviewsList from "@/components/ReviewsList";
 import SlackDigestPreview from "@/components/SlackDigestPreview";
+import { DEMO_BRANDS } from "@/data/demo-brands";
 
 interface Insight {
   type: "warning" | "success" | "info";
@@ -16,6 +17,8 @@ interface Insight {
 
 interface DashboardData {
   storeName: string;
+  productName: string;
+  brandEmoji: string;
   sentiment: { positive: number; negative: number; neutral: number; total: number };
   topThemes: { theme: string; count: number; avgSentiment: number }[];
   weekOverWeek: {
@@ -93,18 +96,25 @@ function InsightCard({ insight }: { insight: Insight }) {
 }
 
 export default function DemoDashboardPage() {
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const [classifyProgress, setClassifyProgress] = useState({ classified: 0, total: 0 });
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const started = useRef(false);
+  const esRef = useRef<EventSource | null>(null);
 
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
+  function startAnalysis(brandId: string) {
+    setSelectedBrand(brandId);
+    setStep("checking");
+    setData(null);
+    setError(null);
+    setClassifyProgress({ classified: 0, total: 0 });
 
-    const es = new EventSource("/api/demo/analyze");
+    if (esRef.current) esRef.current.close();
+
+    const es = new EventSource(`/api/demo/analyze?brand=${brandId}`);
+    esRef.current = es;
 
     es.addEventListener("status", (e) => {
       const payload = JSON.parse(e.data);
@@ -135,18 +145,19 @@ export default function DemoDashboardPage() {
 
     es.onerror = () => {
       if (step !== "done") {
-        setError("Connection lost — please refresh to retry.");
+        setError("Connection lost — please try again.");
         setStep("error");
       }
       es.close();
     };
+  }
 
-    return () => es.close();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { esRef.current?.close(); }, []);
+
+  const activeBrand = DEMO_BRANDS.find((b) => b.id === selectedBrand);
 
   return (
     <main className="container" style={{ padding: "2rem 1.5rem", maxWidth: 1100 }}>
-      {/* Spinner animation */}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Header */}
@@ -155,18 +166,55 @@ export default function DemoDashboardPage() {
           &larr; Back to home
         </Link>
         <h1 style={{ fontSize: "1.75rem", fontWeight: 700 }}>
-          Demo Dashboard
+          Live Demo
         </h1>
         <p style={{ color: "#64748b", fontSize: 14 }}>
-          Summit Gear Co. &mdash; 20 reviews classified live with Claude AI
+          Pick a real brand below — we&rsquo;ll classify their reviews live with Claude AI
         </p>
       </div>
 
+      {/* Brand selector */}
+      <div className="card" style={{ marginBottom: "2rem" }}>
+        <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Choose a brand</h2>
+        <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
+          All five are real merchants on judge.me. Select one to run a live analysis.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+          {DEMO_BRANDS.map((brand) => {
+            const isSelected = selectedBrand === brand.id;
+            const isRunning = isSelected && step !== "done" && step !== "idle" && step !== "error";
+            return (
+              <button
+                key={brand.id}
+                onClick={() => startAnalysis(brand.id)}
+                disabled={isRunning}
+                style={{
+                  padding: "14px 16px",
+                  background: isSelected ? "#eff6ff" : "#fff",
+                  border: `2px solid ${isSelected ? "#2563eb" : "#e2e8f0"}`,
+                  borderRadius: 10,
+                  cursor: isRunning ? "default" : "pointer",
+                  textAlign: "left",
+                  transition: "border-color 0.15s, background 0.15s",
+                  opacity: isRunning ? 0.75 : 1,
+                }}
+              >
+                <div style={{ fontSize: "1.5rem", marginBottom: 6 }}>{brand.emoji}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 2 }}>{brand.name}</div>
+                <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.4 }}>{brand.product}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Progress section */}
-      {step !== "done" && (
+      {step !== "idle" && step !== "done" && (
         <div className="card" style={{ marginBottom: "2rem" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Analyzing Reviews</h2>
-          <StepIndicator step="checking" current={step} label="Connecting to store" />
+          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
+            Analyzing {activeBrand?.name} Reviews
+          </h2>
+          <StepIndicator step="checking" current={step} label={`Connecting to ${activeBrand?.name ?? "store"}`} />
           <StepIndicator step="found" current={step} label="Loading reviews" detail={statusMessage} />
           <StepIndicator
             step="classifying"
@@ -176,7 +224,6 @@ export default function DemoDashboardPage() {
           />
           <StepIndicator step="done" current={step} label="Building dashboard" />
 
-          {/* Progress bar */}
           {step === "classifying" && classifyProgress.total > 0 && (
             <div style={{ marginTop: 12, height: 6, background: "#f1f5f9", borderRadius: 3 }}>
               <div
@@ -202,6 +249,21 @@ export default function DemoDashboardPage() {
       {/* Dashboard */}
       {data && (
         <>
+          {/* Store header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: "1.5rem" }}>
+            <span style={{ fontSize: "2rem" }}>{data.brandEmoji}</span>
+            <div>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0 }}>{data.storeName}</h2>
+              <div style={{ fontSize: 13, color: "#64748b" }}>{data.productName} &mdash; {data.sentiment.total} reviews classified</div>
+            </div>
+            <button
+              onClick={() => { setData(null); setStep("idle"); setSelectedBrand(null); }}
+              style={{ marginLeft: "auto", fontSize: 13, color: "#2563eb", background: "none", border: "1px solid #bfdbfe", borderRadius: 6, padding: "6px 14px", cursor: "pointer" }}
+            >
+              Try another brand
+            </button>
+          </div>
+
           {/* Stat cards */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
             <div className="card" style={{ textAlign: "center" }}>
