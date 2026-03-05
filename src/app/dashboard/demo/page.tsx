@@ -146,13 +146,13 @@ function ActionHub({ data }: { data: DashboardData }) {
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem", marginBottom: "1.5rem" }}>
 
       {/* ── Fix These ── */}
-      <div style={{ background: "#fff", border: "2px solid #fca5a5", borderRadius: 12, overflow: "hidden" }}>
-        <div style={{ background: "#fef2f2", borderBottom: "1px solid #fca5a5", padding: "14px 18px" }}>
+      <div style={{ background: "#fff", border: "2px solid #fcd34d", borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ background: "#fffbeb", borderBottom: "1px solid #fcd34d", padding: "14px 18px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontSize: "1.1rem" }}>🔴</span>
+            <span style={{ fontSize: "1.1rem" }}>⚠️</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: "#991b1b" }}>Issues to Fix</div>
-              <div style={{ fontSize: 12, color: "#b91c1c", marginTop: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: "#92400e" }}>Issues to Fix</div>
+              <div style={{ fontSize: 12, color: "#b45309", marginTop: 1 }}>
                 {negPct}% of reviews flag a problem — here&rsquo;s where customers are hurting
               </div>
             </div>
@@ -168,7 +168,7 @@ function ActionHub({ data }: { data: DashboardData }) {
               <div key={t.theme}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                   <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{formatTheme(t.theme)}</span>
-                  <span style={{ fontSize: 12, background: "#fee2e2", color: "#991b1b", borderRadius: 20, padding: "1px 8px", fontWeight: 600 }}>
+                  <span style={{ fontSize: 12, background: "#fef3c7", color: "#92400e", borderRadius: 20, padding: "1px 8px", fontWeight: 600 }}>
                     {t.count} mention{t.count !== 1 ? "s" : ""}
                   </span>
                 </div>
@@ -177,8 +177,8 @@ function ActionHub({ data }: { data: DashboardData }) {
                 </div>
                 {sample && (
                   <div style={{
-                    fontSize: 12, color: "#475569", background: "#fef2f2",
-                    borderLeft: "3px solid #f87171", borderRadius: "0 6px 6px 0",
+                    fontSize: 12, color: "#475569", background: "#fffbeb",
+                    borderLeft: "3px solid #fbbf24", borderRadius: "0 6px 6px 0",
                     padding: "6px 10px", lineHeight: 1.5, fontStyle: "italic",
                   }}>
                     &ldquo;{sample.text.slice(0, 110)}{sample.text.length > 110 ? "…" : ""}&rdquo;
@@ -435,8 +435,8 @@ export default function DemoDashboardPage() {
               </div>
             </div>
             <div className="card" style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", fontWeight: 600, letterSpacing: 0.5 }}>Negative — fix these</div>
-              <div style={{ fontSize: "2rem", fontWeight: 700, color: "#ef4444" }}>
+              <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", fontWeight: 600, letterSpacing: 0.5 }}>⚠️ Negative — fix these</div>
+              <div style={{ fontSize: "2rem", fontWeight: 700, color: "#d97706" }}>
                 {data.sentiment.total > 0 ? Math.round((data.sentiment.negative / data.sentiment.total) * 100) : 0}%
               </div>
             </div>
@@ -465,8 +465,8 @@ export default function DemoDashboardPage() {
             <div className="card" style={{ marginBottom: "1.5rem" }}>
               {issueInsights.length > 0 && (
                 <>
-                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "#991b1b", marginBottom: 10 }}>
-                    🔴 Issues Flagged by AI
+                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "#92400e", marginBottom: 10 }}>
+                    ⚠️ Issues Flagged by AI
                   </h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: opportunityInsights.length > 0 ? 16 : 0 }}>
                     {issueInsights.map((insight, i) => <InsightCard key={i} insight={insight} />)}

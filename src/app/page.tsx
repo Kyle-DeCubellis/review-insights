@@ -61,7 +61,7 @@ export default function HomePage() {
         {/* Feature cards */}
         <div style={{ marginTop: "3rem", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
           {[
-            { icon: "🔴", title: "Fix These", desc: "Negative reviews grouped by theme with a specific action for each problem" },
+            { icon: "⚠️", title: "Fix These", desc: "Negative reviews grouped by theme with a specific action for each problem" },
             { icon: "🟢", title: "Amplify in Ads", desc: "Positive themes your customers praise — ready to use in campaigns" },
             { icon: "🔔", title: "Slack Digest", desc: "Daily summary delivered to your team every morning, automatically" },
           ].map((f) => (
