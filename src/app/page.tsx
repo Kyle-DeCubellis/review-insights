@@ -16,7 +16,8 @@ export default function HomePage() {
           />
         </div>
         <p style={{ color: "#64748b", marginBottom: "2rem", fontSize: "1.125rem", lineHeight: 1.6 }}>
-          AI-powered classification for your Shopify reviews. Understand sentiment, themes, and trends — then act on them.
+          Your reviews already tell you what to fix and what to put in your next ad.
+          Insight.me reads every one and surfaces the signal.
         </p>
 
         {/* Primary CTA */}
@@ -60,9 +61,9 @@ export default function HomePage() {
         {/* Feature cards */}
         <div style={{ marginTop: "3rem", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
           {[
-            { icon: "🤖", title: "AI Classification", desc: "Claude classifies every review by theme and sentiment in real-time" },
-            { icon: "📊", title: "Live Dashboard", desc: "Sentiment breakdown, top themes, and week-over-week trends" },
-            { icon: "🔔", title: "Slack Digests", desc: "Daily summaries delivered to your team's Slack channel" },
+            { icon: "🔴", title: "Fix These", desc: "Negative reviews grouped by theme with a specific action for each problem" },
+            { icon: "🟢", title: "Amplify in Ads", desc: "Positive themes your customers praise — ready to use in campaigns" },
+            { icon: "🔔", title: "Slack Digest", desc: "Daily summary delivered to your team every morning, automatically" },
           ].map((f) => (
             <div key={f.title} style={{ padding: "1.25rem", background: "#fff", borderRadius: 10, border: "1px solid #e2e8f0", textAlign: "left" }}>
               <div style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>{f.icon}</div>

@@ -14,6 +14,8 @@ interface Review {
 
 interface ReviewsListProps {
   reviews: Review[];
+  defaultSortKey?: SortKey;
+  defaultSortDir?: "asc" | "desc";
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -37,9 +39,9 @@ function formatThemeName(theme: string): string {
 
 type SortKey = "createdAt" | "theme" | "sentiment" | "rating";
 
-export default function ReviewsList({ reviews }: ReviewsListProps) {
-  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+export default function ReviewsList({ reviews, defaultSortKey = "createdAt", defaultSortDir = "desc" }: ReviewsListProps) {
+  const [sortKey, setSortKey] = useState<SortKey>(defaultSortKey);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(defaultSortDir);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   function handleSort(key: SortKey) {
