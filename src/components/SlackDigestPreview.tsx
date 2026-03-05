@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 interface SlackDigestPreviewProps {
   storeName: string;
   sentiment: { positive: number; negative: number; neutral: number };
@@ -72,10 +74,11 @@ export default function SlackDigestPreview({ storeName, sentiment, topThemes }: 
           <div style={{ display: "flex", gap: 8 }}>
             {/* Bot avatar */}
             <div style={{
-              width: 36, height: 36, borderRadius: 4, background: "linear-gradient(135deg, #2563eb, #7c3aed)",
-              display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16, fontWeight: 700, flexShrink: 0,
+              width: 36, height: 36, borderRadius: 4, background: "#fff",
+              border: "1px solid #e2e8f0", display: "flex", alignItems: "center",
+              justifyContent: "center", flexShrink: 0, overflow: "hidden", padding: 3,
             }}>
-              IM
+              <Image src="/logo_wordmark.png" alt="Insight.me" width={30} height={30} style={{ width: 30, height: "auto", objectFit: "contain" }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ marginBottom: 4 }}>

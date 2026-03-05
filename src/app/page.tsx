@@ -1,13 +1,20 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function HomePage() {
   return (
     <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
       <div style={{ maxWidth: 560, textAlign: "center" }}>
-        <div style={{ fontSize: "2.75rem", marginBottom: "0.5rem" }}>📊</div>
-        <h1 style={{ fontSize: "2.5rem", fontWeight: 700, marginBottom: "0.75rem", lineHeight: 1.2 }}>
-          Insight.me
-        </h1>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <Image
+            src="/logo_wordmark.png"
+            alt="Insight.me"
+            width={420}
+            height={120}
+            priority
+            style={{ width: "100%", maxWidth: 420, height: "auto" }}
+          />
+        </div>
         <p style={{ color: "#64748b", marginBottom: "2rem", fontSize: "1.125rem", lineHeight: 1.6 }}>
           AI-powered classification for your Shopify reviews. Understand sentiment, themes, and trends — then act on them.
         </p>

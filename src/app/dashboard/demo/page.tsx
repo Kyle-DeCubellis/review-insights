@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import SentimentChart from "@/components/SentimentChart";
 import ThemesList from "@/components/ThemesList";
 import WeekOverWeek from "@/components/WeekOverWeek";
@@ -162,10 +163,13 @@ export default function DemoDashboardPage() {
 
       {/* Header */}
       <div style={{ marginBottom: "2rem" }}>
-        <Link href="/" style={{ fontSize: 13, color: "#64748b", display: "inline-block", marginBottom: 8 }}>
+        <Link href="/" style={{ fontSize: 13, color: "#64748b", display: "inline-block", marginBottom: 12 }}>
           &larr; Back to home
         </Link>
-        <h1 style={{ fontSize: "1.75rem", fontWeight: 700 }}>
+        <div style={{ marginBottom: 8 }}>
+          <Image src="/logo_wordmark.png" alt="Insight.me" width={200} height={56} style={{ height: 44, width: "auto" }} />
+        </div>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 700 }}>
           Live Demo
         </h1>
         <p style={{ color: "#64748b", fontSize: 14 }}>
