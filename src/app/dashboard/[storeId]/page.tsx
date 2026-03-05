@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Image from "next/image";
 import type { DashboardResponse } from "@/app/api/dashboard/[storeId]/route";
 import SentimentChart from "@/components/SentimentChart";
 import ThemesList from "@/components/ThemesList";
@@ -49,7 +50,7 @@ export default async function DashboardPage({ params }: PageProps) {
       <header style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "1rem 0" }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h1 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Review Insights</h1>
+            <Image src="/logo_wordmark.png" alt="Insight.me" width={140} height={40} style={{ height: 36, width: "auto" }} />
             <p style={{ fontSize: "0.875rem", color: "#64748b" }}>{data.shopifyStoreId}</p>
           </div>
           <div style={{ textAlign: "right", fontSize: "0.75rem", color: "#94a3b8" }}>
